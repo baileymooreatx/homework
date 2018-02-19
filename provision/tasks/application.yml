@@ -1,0 +1,26 @@
+---
+##
+# Copy application.zip contents into /opt/applicaiton
+# application.zip contains two scripts
+#   run        bash script used by runit
+#   server.py  python HTTPServer
+##
+
+- name: ensure target directory exists
+  file:
+    path: "/opt"
+    state: directory
+    mode: "u=rw,g=r,o=r"
+
+- name: unzip application into opt
+  unarchive:
+    src: "application.zip"
+    dest: "/opt"
+
+- name: make scripts executable
+  file:
+    path: "/opt/application/"
+    state: directory
+    recurse: yes
+    mode: "u=rwx,g=rx,o=rx"
+

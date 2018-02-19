@@ -1,0 +1,56 @@
+---
+##
+# Install and configure runit to manage the python webserver
+# runit will automatically restart the webserver when it stops
+# See documentation at http://smarden.org/runit/index.html
+##
+
+- name: install runit dependencies
+  yum:
+    name: "{{ item }}"
+    state: present
+  with_items:
+    - epel-release  # included in the CentOS Extras repository
+    - pygpgme       # allows yum to handle gpg signatures
+
+- name: set directory permissions to allow addition of yum repo
+  file:
+    path: "/etc/yum.repos.d/"
+    state: directory
+    mode: "u=rw,g=r,o=r"
+
+# Script copied from https://packagecloud.io/imeyer/runit/install#bash-rpm
+# Using a fixed version of the script is safer than using curl because this fixed version has been reviewed.
+- name: run script to install runit repo
+  script: "install_runit.sh"
+
+- name: install runit
+  yum:
+    name: runit
+    state: present
+    update_cache: yes
+
+# See http://smarden.org/runit/useinit.html
+# Section "Using with sysvinit and inittab"
+- name: add runit to inittab
+  command: "echo 'SV:123456:respawn:/sbin/runsvdir-start' >> /etc/inittab"
+
+- name: reload init configuration
+  command: "init q"
+
+- name: ensure existence of /etc/service
+  file:
+    path: "/etc/service"
+    state: directory
+
+- name: create directory for pyserver (webserver server.py)
+  file:
+    path: "/etc/service/pyserver"
+    state: directory
+
+- name: create symlink to run script for server.py
+  file:
+    path: "/etc/service/pyserver/run"
+    src: "/opt/application/run"
+    state: link
+#    force: yes

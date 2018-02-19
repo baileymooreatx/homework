@@ -1,0 +1,51 @@
+---
+##
+# Install and configure nginx as a reverse proxy for the python webserver
+# Modeled after https://github.com/bennojoy/nginx/ role for nginx (Ansible Galaxy)
+##
+
+- name: install nginx and dependencies
+  yum:
+    name: "{{ item }}"
+    state: present
+  with_items:
+    - epel-release
+    - nginx
+
+- name: ensure ssl folder exists
+  file:
+    path: "/etc/nginx/ssl"
+    state: directory
+
+- name: copy SSL certifcate and key
+  copy:
+    src: "{{ item }}"
+    dest: "/etc/nginx/ssl"
+    mode: "u=rw,g=r,o=r"
+  with_items:
+    - "self-signed.crt"
+    - "self-signed.key"
+
+- name: copy nginx configuration
+  copy:
+    src: "config/nginx.conf"
+    dest: "/etc/nginx/nginx.conf"
+    mode: "u=rw,g=r,o=r"
+    backup: yes
+
+- name: create directories for site specific configurations
+  file:
+    path: "/etc/nginx/{{ item }}"
+    state: "directory"
+    mode: "u=rwx,g=rx,o=rx"
+  with_items:
+    - "sites-available"
+    - "sites-enabled"
+
+- name: restart nginx
+  service:
+     name: nginx
+     state: restarted
+     enabled: yes
+
+
